@@ -6,7 +6,7 @@ import express from 'express'
 import rateLimit from 'express-rate-limit'
 import helmet from 'helmet'
 import { answerQuestion, summarizeNote } from './ai.js'
-import { createNote, deleteNote, getNote, listNotes, updateNote } from './db.js'
+import { createNote, deleteNote, getNote, listNotes, listNotesPage, updateNote } from './db.js'
 
 const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const SEARCH_MAX = 200
@@ -40,6 +40,14 @@ function readQuestion(body) {
 
 function noteId(value) {
   return typeof value === 'string' && UUID.test(value) ? value : null
+}
+
+function readPage(value) {
+  if (value === undefined) return 1
+  if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value)) return null
+  const page = Number(value)
+  if (!Number.isSafeInteger(page) || page > 10000) return null
+  return page
 }
 
 function allowedOrigins() {
@@ -111,7 +119,9 @@ export function createApp() {
     if (q.length > SEARCH_MAX) {
       return res.status(400).json({ error: 'Search must be 200 characters or less.' })
     }
-    res.json({ notes: listNotes(q) })
+    const page = readPage(req.query.page)
+    if (page === null) return res.status(400).json({ error: 'Page must be a whole number.' })
+    res.json(listNotesPage(q, page))
   })
 
   app.post(

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { limits } from '../../core/validation/sanitize'
 import { messages } from '../../core/i18n/messages'
+import { LoadingSkeleton } from '../../shared/components/LoadingSkeleton'
 
 export type EditorView = {
   mode: 'create' | 'edit'
@@ -17,7 +18,7 @@ export type EditorView = {
 }
 
 export function EditorScreen(props: EditorView) {
-  if (props.loading) return <p role="status">{messages.loadingNote}</p>
+  if (props.loading) return <LoadingSkeleton label={messages.loadingNote} rows={2} />
   if (props.missing) {
     return (
       <section className="panel stack">

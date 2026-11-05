@@ -1,10 +1,10 @@
-import type { Answer, Note, NoteDraft, Summary } from '../domain/note'
+import type { Answer, Note, NoteDraft, NotePage, Summary } from '../domain/note'
 import { requestJson } from './client'
 import { endpoints, notesCollectionPath } from './endpoints'
-import { mapAnswer, mapNote, mapNotes, mapSummary } from './mappers'
+import { mapAnswer, mapNote, mapNotePage, mapSummary } from './mappers'
 
 export type NotesRepository = {
-  list(query: string): Promise<Note[]>
+  list(query: string, page: number): Promise<NotePage>
   get(id: string): Promise<Note>
   create(input: NoteDraft): Promise<Note>
   update(id: string, input: NoteDraft): Promise<Note>
@@ -14,8 +14,8 @@ export type NotesRepository = {
 }
 
 export const httpNotesRepository: NotesRepository = {
-  async list(query) {
-    return mapNotes(await requestJson(notesCollectionPath(query)))
+  async list(query, page) {
+    return mapNotePage(await requestJson(notesCollectionPath(query, page)))
   },
   async get(id) {
     return mapNote(await requestJson(endpoints.note(id)))

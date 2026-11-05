@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom'
 import type { Answer } from '../../core/domain/note'
 import { messages } from '../../core/i18n/messages'
 import { limits } from '../../core/validation/sanitize'
-import { SourceLabel } from '../../shared/components/SourceLabel'
+import { LoadingSkeleton } from '../../shared/components/LoadingSkeleton'
+import { StatusBadge } from '../../shared/components/StatusBadge'
 
 export type AskView = {
   question: string
@@ -50,11 +51,11 @@ export function AskScreen(props: AskView) {
           </button>
         </div>
       </form>
-      {props.asking ? <p role="status">{messages.asking}</p> : null}
+      {props.asking ? <LoadingSkeleton label={messages.asking} rows={2} /> : null}
       {props.answer ? (
         <section className="panel stack" aria-label={messages.askHeading}>
           <p className="prose">{props.answer.answer}</p>
-          <SourceLabel source={props.answer.source} />
+          <StatusBadge source={props.answer.source} />
           {props.answer.notice ? (
             <div role="status" className="notice">
               <strong>{messages.noticeLabel}. </strong>

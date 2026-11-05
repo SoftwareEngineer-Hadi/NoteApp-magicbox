@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import type { Note, Summary } from '../../core/domain/note'
 import { messages } from '../../core/i18n/messages'
 import { ConfirmDialog } from '../../shared/components/ConfirmDialog'
-import { SourceLabel } from '../../shared/components/SourceLabel'
+import { LoadingSkeleton } from '../../shared/components/LoadingSkeleton'
+import { StatusBadge } from '../../shared/components/StatusBadge'
 
 export type NoteDetailView = {
   status: 'loading' | 'error' | 'ready'
@@ -22,7 +23,7 @@ export type NoteDetailView = {
 export function NoteDetailScreen(props: NoteDetailView) {
   const [confirming, setConfirming] = useState(false)
 
-  if (props.status === 'loading') return <p role="status">{messages.loadingNote}</p>
+  if (props.status === 'loading') return <LoadingSkeleton label={messages.loadingNote} rows={2} />
   if (props.missing) {
     return (
       <section className="panel stack">
@@ -67,7 +68,7 @@ export function NoteDetailScreen(props: NoteDetailView) {
           {props.summaryLoading ? messages.summarizing : messages.summarize}
         </button>
       </div>
-      {props.summaryLoading ? <p role="status">{messages.summarizing}</p> : null}
+      {props.summaryLoading ? <LoadingSkeleton label={messages.summarizing} rows={2} /> : null}
       {props.summaryError ? (
         <div role="alert" className="alert">
           {props.summaryError}
@@ -89,7 +90,7 @@ export function NoteDetailScreen(props: NoteDetailView) {
               <li key={`${index}-${action}`}>{action}</li>
             ))}
           </ol>
-          <SourceLabel source={props.summary.source} />
+          <StatusBadge source={props.summary.source} />
           {props.summary.notice ? (
             <div role="status" className="notice">
               <strong>{messages.noticeLabel}. </strong>

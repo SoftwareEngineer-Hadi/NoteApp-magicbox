@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ApiError } from './client'
-import { mapAnswer, mapNote, mapSummary } from './mappers'
+import { mapAnswer, mapNote, mapNotePage, mapSummary } from './mappers'
 
 const note = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -13,6 +13,16 @@ const note = {
 describe('response mappers', () => {
   it('keeps only note fields', () => {
     expect(mapNote({ ...note, extra: '<script>' })).toEqual(note)
+  })
+
+  it('keeps the server page', () => {
+    expect(mapNotePage({ notes: [note], page: 2, pageSize: 20, total: 21 })).toEqual({
+      notes: [note],
+      page: 2,
+      pageSize: 20,
+      total: 21,
+    })
+    expect(() => mapNotePage({ notes: [note], page: 0, pageSize: 20, total: 1 })).toThrow(ApiError)
   })
 
   it('rejects a note missing a title', () => {

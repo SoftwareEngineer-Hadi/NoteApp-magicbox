@@ -1,4 +1,4 @@
-import type { Answer, Note, RelatedNote, Summary } from '../domain/note'
+import type { Answer, Note, NotePage, RelatedNote, Summary } from '../domain/note'
 import { ApiError } from './client'
 import { messages } from '../i18n/messages'
 
@@ -8,6 +8,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function text(value: unknown): string | null {
   return typeof value === 'string' ? value : null
+}
+
+function wholeNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null
 }
 
 function source(value: unknown): Summary['source'] | null {
@@ -32,6 +36,17 @@ export function mapNotes(value: unknown): Note[] {
     throw new ApiError(messages.somethingWentWrong, 0)
   }
   return value.notes.map((item) => mapNote(item))
+}
+
+export function mapNotePage(value: unknown): NotePage {
+  if (!isRecord(value)) throw new ApiError(messages.somethingWentWrong, 0)
+  const page = wholeNumber(value.page)
+  const pageSize = wholeNumber(value.pageSize)
+  const total = wholeNumber(value.total)
+  if (page === null || page < 1 || pageSize === null || pageSize < 1 || total === null) {
+    throw new ApiError(messages.somethingWentWrong, 0)
+  }
+  return { notes: mapNotes(value), page, pageSize, total }
 }
 
 export function mapSummary(value: unknown): Summary {

@@ -45,6 +45,33 @@ test('lists seeded notes newest-style and escapes percent searches', async () =>
   )
   const wildcard = await json(`/api/notes?q=${encodeURIComponent('%')}`)
   assert.deepEqual(wildcard.body.notes, [])
+  assert.equal(all.body.page, 1)
+  assert.equal(all.body.pageSize, 20)
+  assert.equal(all.body.total, 3)
+})
+
+test('returns the second page and rejects a page that is not a whole number', async () => {
+  const ids = []
+  for (let index = 0; index < 21; index += 1) {
+    const created = await json('/api/notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: `Pager ${index}`, body: 'pager-only' }),
+    })
+    ids.push(created.body.id)
+  }
+  const page = await json('/api/notes?q=pager-only&page=2')
+  assert.equal(page.response.status, 200)
+  assert.equal(page.body.page, 2)
+  assert.equal(page.body.pageSize, 20)
+  assert.equal(page.body.total, 21)
+  assert.equal(page.body.notes.length, 1)
+  const bad = await json('/api/notes?page=0')
+  assert.equal(bad.response.status, 400)
+  assert.equal(bad.body.error, 'Page must be a whole number.')
+  for (const id of ids) {
+    await json(`/api/notes/${id}`, { method: 'DELETE' })
+  }
 })
 
 test('creates, rejects a blank title, and deletes', async () => {

@@ -57,6 +57,8 @@ function likeTerm(query) {
   return `%${query.replace(/[\\%_]/g, '\\$&')}%`
 }
 
+export const NOTES_PAGE_SIZE = 20
+
 export function listNotes(query = '') {
   const q = query.trim()
   if (!q) {
@@ -70,6 +72,35 @@ export function listNotes(query = '') {
        ORDER BY updated_at DESC, id DESC`,
     )
     .all(term, term)
+}
+
+export function listNotesPage(query = '', page = 1) {
+  const q = query.trim()
+  const pageSize = NOTES_PAGE_SIZE
+  const offset = (page - 1) * pageSize
+  if (!q) {
+    const total = db.prepare('SELECT COUNT(*) AS count FROM notes').get().count
+    const notes = db
+      .prepare('SELECT * FROM notes ORDER BY updated_at DESC, id DESC LIMIT ? OFFSET ?')
+      .all(pageSize, offset)
+    return { notes, page, pageSize, total }
+  }
+  const term = likeTerm(q)
+  const total = db
+    .prepare(
+      `SELECT COUNT(*) AS count FROM notes
+       WHERE title LIKE ? ESCAPE '\\' OR body LIKE ? ESCAPE '\\'`,
+    )
+    .get(term, term).count
+  const notes = db
+    .prepare(
+      `SELECT * FROM notes
+       WHERE title LIKE ? ESCAPE '\\' OR body LIKE ? ESCAPE '\\'
+       ORDER BY updated_at DESC, id DESC
+       LIMIT ? OFFSET ?`,
+    )
+    .all(term, term, pageSize, offset)
+  return { notes, page, pageSize, total }
 }
 
 export function getNote(id) {

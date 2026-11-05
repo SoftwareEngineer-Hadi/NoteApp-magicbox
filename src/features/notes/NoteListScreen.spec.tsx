@@ -20,7 +20,11 @@ function view(overrides: Partial<Parameters<typeof NoteListScreen>[0]> = {}) {
     error: null,
     canRetry: false,
     notes: [note],
+    page: 1,
+    pageSize: 20,
+    total: 1,
     onQuery: vi.fn(),
+    onPage: vi.fn(),
     onRetry: vi.fn(),
     ...overrides,
   }
@@ -66,5 +70,18 @@ describe('NoteListScreen', () => {
     )
     await userEvent.click(screen.getByRole('button', { name: messages.retry }))
     expect(onRetry).toHaveBeenCalledOnce()
+  })
+
+  it('clears the search and moves to the next server page', async () => {
+    const onQuery = vi.fn()
+    const onPage = vi.fn()
+    renderWithRouter(
+      <NoteListScreen {...view({ query: 'milk', page: 1, pageSize: 2, total: 3, onQuery, onPage })} />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: messages.clearSearch }))
+    expect(onQuery).toHaveBeenCalledWith('')
+    expect(screen.getByText(messages.pageStatus(1, 2))).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: messages.nextPage }))
+    expect(onPage).toHaveBeenCalledWith(2)
   })
 })

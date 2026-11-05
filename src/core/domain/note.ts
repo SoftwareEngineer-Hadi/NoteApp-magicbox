@@ -11,6 +11,13 @@ export type NoteDraft = {
   body: string
 }
 
+export type NotePage = {
+  notes: Note[]
+  page: number
+  pageSize: number
+  total: number
+}
+
 export type AnswerSource = 'demo' | 'openai'
 
 export type Summary = {
