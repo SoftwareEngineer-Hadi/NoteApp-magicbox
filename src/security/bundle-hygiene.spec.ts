@@ -24,6 +24,7 @@ describe('client bundle hygiene', () => {
       if (/https?:\/\//.test(text) || /console\./.test(text) || /dangerouslySetInnerHTML/.test(text)) {
         offenders.push(file)
       }
+      if (!isTest && /localStorage|sessionStorage/.test(text)) offenders.push(file)
       if (/OPENAI|API_KEY|sk-/.test(text)) offenders.push(file)
       if (!isTest && path.normalize(file) !== endpointFile && text.includes('/api/')) offenders.push(file)
     }

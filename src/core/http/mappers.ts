@@ -1,4 +1,4 @@
-import type { Answer, Note, NotePage, RelatedNote, Summary } from '../domain/note'
+import type { Answer, Note, NotePage, RelatedNote, Session, Summary } from '../domain/note'
 import { ApiError } from './client'
 import { messages } from '../i18n/messages'
 
@@ -47,6 +47,13 @@ export function mapNotePage(value: unknown): NotePage {
     throw new ApiError(messages.somethingWentWrong, 0)
   }
   return { notes: mapNotes(value), page, pageSize, total }
+}
+
+export function mapSession(value: unknown): Session {
+  if (!isRecord(value)) throw new ApiError(messages.somethingWentWrong, 0)
+  const email = text(value.email)
+  if (!email) throw new ApiError(messages.somethingWentWrong, 0)
+  return { email }
 }
 
 export function mapSummary(value: unknown): Summary {

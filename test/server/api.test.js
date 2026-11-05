@@ -14,6 +14,7 @@ const { createApp } = await import('../../server/index.js')
 
 let server
 let base
+let cookie = ''
 
 before(async () => {
   server = createServer(createApp())
@@ -21,6 +22,20 @@ before(async () => {
   const address = server.address()
   assert.ok(address && typeof address === 'object')
   base = `http://127.0.0.1:${address.port}`
+  const signed = await json('/api/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: ' owner@example.com ', password: 'local-pass' }),
+  })
+  assert.equal(signed.response.status, 201)
+  assert.deepEqual(signed.body, { email: 'owner@example.com' })
+  assert.equal(JSON.stringify(signed.body).includes('local-pass'), false)
+  const setCookie = signed.response.headers.getSetCookie()[0]
+  assert.match(
+    setCookie,
+    /^__Host-session=[a-f0-9]{64}; HttpOnly; Secure; SameSite=Strict; Path=\/; Max-Age=\d+$/,
+  )
+  cookie = setCookie.split(';')[0]
 })
 
 after(() => {
@@ -28,11 +43,36 @@ after(() => {
   rmSync(dir, { recursive: true, force: true })
 })
 
-async function json(pathname, init) {
-  const response = await fetch(`${base}${pathname}`, init)
+async function json(pathname, init = {}) {
+  const headers = new Headers(init.headers)
+  const method = init.method ?? 'GET'
+  if (method !== 'GET' && method !== 'HEAD' && !headers.has('X-Smart-Notes')) {
+    headers.set('X-Smart-Notes', '1')
+  }
+  if (cookie && !headers.has('cookie')) headers.set('cookie', cookie)
+  const response = await fetch(`${base}${pathname}`, { ...init, headers })
   const body = await response.json()
   return { response, body }
 }
+
+test('refuses notes without a session and without the CSRF header', async () => {
+  const open = await json('/api/notes', { headers: { cookie: '' } })
+  assert.equal(open.response.status, 401)
+  assert.equal(open.body.error, 'Sign in first.')
+  const forged = await json('/api/notes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Smart-Notes': 'no' },
+    body: JSON.stringify({ title: 'Nope', body: 'x' }),
+  })
+  assert.equal(forged.response.status, 403)
+  const blank = await json('/api/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'owner@example.com', password: '' }),
+  })
+  assert.equal(blank.response.status, 400)
+  assert.equal(blank.body.error, 'A password is required.')
+})
 
 test('lists seeded notes newest-style and escapes percent searches', async () => {
   const all = await json('/api/notes')
@@ -72,6 +112,24 @@ test('returns the second page and rejects a page that is not a whole number', as
   for (const id of ids) {
     await json(`/api/notes/${id}`, { method: 'DELETE' })
   }
+})
+
+test('summarizes a note that ends in a long run of periods', async () => {
+  const created = await json('/api/notes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: 'Dots',
+      body: `Need milk before Thursday.${'.'.repeat(4000)}`,
+    }),
+  })
+  assert.equal(created.response.status, 201)
+  const started = Date.now()
+  const summary = await json(`/api/notes/${created.body.id}/summarize`, { method: 'POST' })
+  assert.equal(summary.response.status, 200)
+  assert.ok(Date.now() - started < 1000)
+  assert.equal(summary.body.actions[0], 'Need milk before Thursday')
+  await json(`/api/notes/${created.body.id}`, { method: 'DELETE' })
 })
 
 test('creates, rejects a blank title, and deletes', async () => {

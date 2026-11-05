@@ -26,6 +26,9 @@ function repository() {
     remove: vi.fn(),
     summarize,
     ask: vi.fn(),
+    session: vi.fn(),
+    login: vi.fn(),
+    logout: vi.fn(),
   }
   return { repo, get, summarize }
 }

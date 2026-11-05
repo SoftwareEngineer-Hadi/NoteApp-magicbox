@@ -45,6 +45,7 @@ function messageFromPayload(payload: unknown, status: number): string {
 export async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
   headers.set('Accept', 'application/json')
+  headers.set('X-Smart-Notes', '1')
   if (init.body !== undefined) headers.set('Content-Type', 'application/json')
 
   let response: Response
@@ -53,6 +54,7 @@ export async function requestJson<T>(path: string, init: RequestInit = {}): Prom
       fetch(new URL(path, window.location.origin), {
         ...init,
         headers,
+        credentials: 'same-origin',
       }),
       REQUEST_TIMEOUT_MS,
     )

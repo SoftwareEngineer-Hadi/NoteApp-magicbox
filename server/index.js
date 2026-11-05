@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit'
 import helmet from 'helmet'
 import { answerQuestion, summarizeNote } from './ai.js'
 import { createNote, deleteNote, getNote, listNotes, listNotesPage, updateNote } from './db.js'
+import { clearSessionCookie, createSession, deleteSession, readSession, sessionCookie } from './session.js'
 
 const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const SEARCH_MAX = 200
@@ -28,6 +29,24 @@ export function readNoteInput(body) {
   if (title.length > 120) return { error: 'Title must be 120 characters or less.' }
   if (text.length > 8000) return { error: 'Note must be 8000 characters or less.' }
   return { title, body: text }
+}
+
+function isEmail(value) {
+  const at = value.indexOf('@')
+  if (at <= 0 || at !== value.lastIndexOf('@')) return false
+  const domain = value.slice(at + 1)
+  return domain.length > 0 && !domain.startsWith('.') && !domain.endsWith('.') && !domain.includes(' ')
+}
+
+export function readLogin(body) {
+  const email = typeof body?.email === 'string' ? stripControls(body.email, false).trim() : ''
+  const password = typeof body?.password === 'string' ? stripControls(body.password, false) : ''
+  if (!email) return { error: 'An email is required.' }
+  if (email.length > 254) return { error: 'Email must be 254 characters or less.' }
+  if (!isEmail(email)) return { error: 'Enter an email address.' }
+  if (!password) return { error: 'A password is required.' }
+  if (password.length > 200) return { error: 'Password must be 200 characters or less.' }
+  return { email }
 }
 
 function readQuestion(body) {
@@ -102,6 +121,28 @@ export function createApp() {
 
   app.use(express.json({ limit: '200kb' }))
 
+  app.use((req, res, next) => {
+    if (!req.path.startsWith('/api')) return next()
+    if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next()
+    if (req.get('X-Smart-Notes') === '1') return next()
+    return res.status(403).json({ error: 'Request was refused.' })
+  })
+
+  function requireSession(req, res, next) {
+    const session = readSession(req.headers.cookie)
+    if (!session) return res.status(401).json({ error: 'Sign in first.' })
+    req.noteSession = session
+    next()
+  }
+
+  const loginLimiter = rateLimit({
+    windowMs: 60_000,
+    limit: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests. Wait a moment and try again.' },
+  })
+
   const aiLimiter = rateLimit({
     windowMs: 60_000,
     limit: 30,
@@ -113,6 +154,32 @@ export function createApp() {
   app.get('/api/health', (_req, res) => {
     res.json({ ok: true, ai: process.env.OPENAI_API_KEY ? 'openai' : 'demo' })
   })
+
+  app.post(
+    '/api/session',
+    loginLimiter,
+    wrap((req, res) => {
+      const input = readLogin(req.body)
+      if (input.error) return res.status(400).json({ error: input.error })
+      const token = createSession(input.email)
+      res.setHeader('Set-Cookie', sessionCookie(token))
+      res.status(201).json({ email: input.email })
+    }),
+  )
+
+  app.get('/api/session', requireSession, (req, res) => {
+    res.json({ email: req.noteSession.email })
+  })
+
+  app.delete('/api/session', (req, res) => {
+    const session = readSession(req.headers.cookie)
+    if (session) deleteSession(session.token)
+    res.setHeader('Set-Cookie', clearSessionCookie())
+    res.json({ ok: true })
+  })
+
+  app.use('/api/notes', requireSession)
+  app.use('/api/ask', requireSession)
 
   app.get('/api/notes', (req, res) => {
     const q = typeof req.query.q === 'string' ? stripControls(req.query.q, false).trim() : ''

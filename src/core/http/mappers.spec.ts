@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ApiError } from './client'
-import { mapAnswer, mapNote, mapNotePage, mapSummary } from './mappers'
+import { mapAnswer, mapNote, mapNotePage, mapSession, mapSummary } from './mappers'
 
 const note = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -11,6 +11,12 @@ const note = {
 }
 
 describe('response mappers', () => {
+  it('keeps only the session email', () => {
+    expect(mapSession({ email: 'owner@example.com', password: 'secret' })).toEqual({
+      email: 'owner@example.com',
+    })
+  })
+
   it('keeps only note fields', () => {
     expect(mapNote({ ...note, extra: '<script>' })).toEqual(note)
   })

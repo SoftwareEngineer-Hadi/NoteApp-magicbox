@@ -18,6 +18,7 @@ const note = {
 describe('note owner flow', () => {
   it('opens a note from the list and asks across notes', async () => {
     server.use(
+      http.get('/api/session', () => HttpResponse.json({ email: 'owner@example.com' })),
       http.get('/api/notes', () =>
         HttpResponse.json({ notes: [note], page: 1, pageSize: 20, total: 1 }),
       ),

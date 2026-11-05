@@ -1,5 +1,6 @@
 export const endpoints = {
   health: '/api/health',
+  session: '/api/session',
   notes: '/api/notes',
   note: (id: string) => `/api/notes/${encodeURIComponent(id)}`,
   summarize: (id: string) => `/api/notes/${encodeURIComponent(id)}/summarize`,

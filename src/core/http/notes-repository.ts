@@ -1,9 +1,12 @@
-import type { Answer, Note, NoteDraft, NotePage, Summary } from '../domain/note'
-import { requestJson } from './client'
+import type { Answer, LoginInput, Note, NoteDraft, NotePage, Session, Summary } from '../domain/note'
+import { ApiError, requestJson } from './client'
 import { endpoints, notesCollectionPath } from './endpoints'
-import { mapAnswer, mapNote, mapNotePage, mapSummary } from './mappers'
+import { mapAnswer, mapNote, mapNotePage, mapSession, mapSummary } from './mappers'
 
 export type NotesRepository = {
+  session(): Promise<Session | null>
+  login(input: LoginInput): Promise<Session>
+  logout(): Promise<void>
   list(query: string, page: number): Promise<NotePage>
   get(id: string): Promise<Note>
   create(input: NoteDraft): Promise<Note>
@@ -14,6 +17,25 @@ export type NotesRepository = {
 }
 
 export const httpNotesRepository: NotesRepository = {
+  async session() {
+    try {
+      return mapSession(await requestJson(endpoints.session))
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) return null
+      throw error
+    }
+  },
+  async login(input) {
+    return mapSession(
+      await requestJson(endpoints.session, {
+        method: 'POST',
+        body: JSON.stringify({ email: input.email, password: input.password }),
+      }),
+    )
+  },
+  async logout() {
+    await requestJson(endpoints.session, { method: 'DELETE' })
+  },
   async list(query, page) {
     return mapNotePage(await requestJson(notesCollectionPath(query, page)))
   },

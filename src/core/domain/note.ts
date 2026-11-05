@@ -11,6 +11,15 @@ export type NoteDraft = {
   body: string
 }
 
+export type Session = {
+  email: string
+}
+
+export type LoginInput = {
+  email: string
+  password: string
+}
+
 export type NotePage = {
   notes: Note[]
   page: number

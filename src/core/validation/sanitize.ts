@@ -3,6 +3,8 @@ export const limits = {
   bodyMax: 8000,
   questionMax: 500,
   searchMax: 200,
+  emailMax: 254,
+  passwordMax: 200,
 } as const
 
 function isBlockedControl(code: number, allowNewlines: boolean): boolean {
@@ -12,11 +14,15 @@ function isBlockedControl(code: number, allowNewlines: boolean): boolean {
   return true
 }
 
-export function sanitizePlainText(value: string, allowNewlines = false): string {
+export function stripControlChars(value: string, allowNewlines = false): string {
   let cleaned = ''
   for (const char of value) {
     if (isBlockedControl(char.charCodeAt(0), allowNewlines)) continue
     cleaned += char
   }
-  return cleaned.trim()
+  return cleaned
+}
+
+export function sanitizePlainText(value: string, allowNewlines = false): string {
+  return stripControlChars(value, allowNewlines).trim()
 }

@@ -25,6 +25,12 @@ function words(text) {
     .filter((word) => word.length > 2 && !STOP.has(word))
 }
 
+function stripTrailingDots(value) {
+  let end = value.length
+  while (end > 0 && value[end - 1] === '.') end -= 1
+  return value.slice(0, end)
+}
+
 function actionLines(body) {
   const found = []
   for (const line of body.split('\n')) {
@@ -34,7 +40,7 @@ function actionLines(body) {
     const looksLikeTask =
       /^[-*]/.test(trimmed) ||
       /^(need|buy|call|email|send|book|pack|check|review|keep|leave)/i.test(text)
-    if (looksLikeTask) found.push(text.replace(/[.]+$/, ''))
+    if (looksLikeTask) found.push(stripTrailingDots(text))
   }
   return found
 }
@@ -59,7 +65,7 @@ function demoSummary(note) {
   const actions = actionLines(note.body)
   for (const part of parts) {
     if (actions.length >= 3) break
-    if (!actions.some((item) => part.startsWith(item))) actions.push(part.replace(/[.]+$/, ''))
+    if (!actions.some((item) => part.startsWith(item))) actions.push(stripTrailingDots(part))
   }
   while (actions.length < 3) {
     actions.push(`Review “${note.title}” again before you act on it`)

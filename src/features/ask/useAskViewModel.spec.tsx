@@ -20,6 +20,9 @@ function repository(): NotesRepository {
     remove: vi.fn(),
     summarize: vi.fn(),
     ask: vi.fn().mockResolvedValue(answer),
+    session: vi.fn(),
+    login: vi.fn(),
+    logout: vi.fn(),
   }
 }
 

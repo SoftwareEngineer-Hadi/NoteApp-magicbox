@@ -1,14 +1,14 @@
 # PROJECT_LOCK — Smart Notes
 
 **Status:** agent-default, from the user instruction to build the app now  
-**Updated:** 2026-11-04  
+**Updated:** 2026-11-05  
 **Sources:** `smart-notes/build-ready-package` 0.1.0, Magic Box frontend guidebook (web + React + testing + security)
 
 ## Product
 - Name: Smart Notes
 - Type: local web app for one note owner
 - Platforms now: web, desktop and phone widths
-- Users: the note owner. No second role. No accounts (PRD out of scope)
+- Users: the note owner. No second role. Sign-in accepts any email and password; the API still requires that session
 
 ## Stack
 - Framework: Vite + React + TypeScript strict
@@ -36,7 +36,8 @@
 - JSON bodies are limited to 200kb. Summarize and ask are rate limited. Note ids must be UUIDs. SQL uses parameters. Note text is rendered as text
 - The model prompt treats note text as untrusted data. Model output is shape-checked, length-bounded, and stripped of the API key if it appears
 - No `console` in `src/`. Server logs do not include note text or the key
-- The full enterprise AI control plane (Presidio, session gates, content policing) is not in this release. The PRD says there are no accounts and the product does not police the owner’s own note text
+- Sign-in stores only an httpOnly `__Host-session` cookie. The password is not stored or logged. State-changing API calls require `X-Smart-Notes: 1`. Logout clears the cookie and the client note cache
+- The full enterprise AI control plane (Presidio, session gates, content policing) is not in this release. The product does not police the owner’s own note text
 
 ## Guides used
 `00_OPERATING_SYSTEM.md`, `03_WEB_GUIDE.md`, `03_REACT_GUIDE.md`, `04_TESTING_GUIDE.md`, `05_SECURITY_GUIDE.md`, plus the Smart Notes PRD, stories, AI spec, and UX package.
