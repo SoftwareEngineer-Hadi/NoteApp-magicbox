@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+
+# production build
+dist/
+
+# local env and secrets
+.env
+.env.*
+!.env.example
+
+# local database
+server/data/*.db
+server/data/*.db-*
+
+# vite / test caches
+.vite/
+coverage/
+
+# logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
